@@ -22,13 +22,13 @@ ifeq (run,$(firstword $(MAKECMDGOALS)))
 endif
 
 build:
-	$(CC) $(CFLAGS) $(FILE).c -o $(EXE)
+	$(CC) $(CFLAGS) -g $(FILE).c inc/cachestructure.c -o $(EXE) -lm
 
 run: build
 	gunzip -c traces/$(TRACE).trace.gz | ./$(EXE) $(CACHE_ARGS)
 
 debug: build
-	$(DEBUGGER) $(EXE)
+	gunzip -c traces/$(TRACE).trace.gz | $(DEBUGGER) $(EXE) $(CACHE_ARGS)
 
 clean:
 	rm -rf $(EXE)
