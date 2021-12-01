@@ -13,8 +13,10 @@ int miss_penalty = 30;
 int extraPenalty = 0;
 float associativityPen = 0;
 float cachePen = 0;
+float cycleTime = .5; // Pico Seconds
+float executionTime = 0.0;
 
-long int executTime = 0;
+long int executCycles = 0;
 long int instructions = 0;
 long int memAccess = 0;
 float totalMissRate = 0;
@@ -191,23 +193,22 @@ int main(int argc, char *argv[])
 
   readMissRate = (float)(loadMiss) / (float)(loadMiss + loadHits);
   totalMissRate = ((float)loadMiss + (float)storeMiss) / (float)memAccess;
-  executTime = (instructions + (dirtyEvic * (miss_penalty + extraPenalty + 2)) +
-                ((loadMiss + storeMiss - dirtyEvic) * miss_penalty + extraPenalty)) *
-               (1 + (associativityPen + cachePen));
-  totalCPI = (float)executTime / (float)instructions;
+  executCycles = instructions + (dirtyEvic * (miss_penalty + 0 + 2)) + ((loadMiss + storeMiss - dirtyEvic) * miss_penalty);
+  totalCPI = ((float)executCycles)/((float)instructions);
+  avgMemTime = (float)((miss_penalty+2)*dirtyEvic + (miss_penalty * (loadMiss + storeMiss - dirtyEvic)))/(float)memAccess; 
 
-  printf("\texecution time %ld cycles\n", executTime);
+  printf("\tExecution Time %.2f\n",(executCycles)*cycleTime);
+  printf("\texecution cycles %ld\n", executCycles);
   printf("\tinstructions %ld\n", instructions);
   printf("\tmemory accesses %ld\n", memAccess);
   printf("\toverall miss rate %.2f\n", totalMissRate);
   printf("\tread miss rate %.2f\n", readMissRate);
   printf("\tmemory CPI %.2f\n", totalCPI - 1);
   printf("\ttotal CPI %.2f\n", totalCPI);
-  printf("\taverage memory access time %.2f cycles\n", ((miss_penalty + extraPenalty) * totalMissRate) + (1 - totalMissRate));
+  printf("\taverage memory access time %.2f cycles\n", avgMemTime);
   printf("dirty evictions %d\n", dirtyEvic);
   printf("load_misses %d\n", loadMiss);
   printf("store_misses %d\n", storeMiss);
   printf("load_hits %d\n", loadHits);
   printf("store_hits %d\n", storeHits);
-  // printf("LRU Uses %ld\n", lruUses);
 }
