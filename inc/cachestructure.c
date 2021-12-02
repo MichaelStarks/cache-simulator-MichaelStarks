@@ -125,6 +125,7 @@ int load(struct cachestructure *cache, int addr, int *loadMiss, int *loadHit, in
         {
             foundEmpty = 1;
             emptyIndex = numassoc;
+            break;
         }
     }
 
