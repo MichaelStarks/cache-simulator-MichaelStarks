@@ -5,8 +5,9 @@ import sys
 import pandas as pd
 from numpy.lib.shape_base import column_stack
 
-
-file = str(sys.argv[1])
+file_name = "art.csv"
+# file_name = str(sys.argv[1]) + ".csv"
+# print(file_name)
 
 execution_time = 0
 
@@ -20,7 +21,7 @@ column_names = ["Lines Found","Execution Time (ps)","Execution Cycles",
             "Store Misses","Load Hits","Store Hits","Parameters"]
 
 try:
-    csv_dataframe = pd.read_csv(file,index_col=0) 
+    csv_dataframe = pd.read_csv(file_name,index_col=0) 
 except FileNotFoundError:
     csv_dataframe = pd.DataFrame(columns=column_names)
 
@@ -44,6 +45,6 @@ numbers.append(parameters)
 
 csv_dataframe.loc[len(csv_dataframe)] = numbers
 
-csv_dataframe.to_csv(file)
+csv_dataframe.to_csv(file_name)
 
 print(execution_time)
