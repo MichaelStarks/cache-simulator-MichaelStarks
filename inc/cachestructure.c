@@ -10,7 +10,6 @@ void init(struct cachestructure *cache, int assoc, int blksz, int cacheSize, int
 {
     int numAssoc = (cacheSize * 1024) / blksz;
     int numTags = numAssoc / assoc;
-    printf("Num Assoc: %d\n",assoc);
     int offsetLength = (int)(log10(blksz) / log10(2));
     int tagLength = (int)(log10(numTags) / log10(2));
     int blockLength = 32 - (offsetLength + tagLength);
@@ -20,9 +19,9 @@ void init(struct cachestructure *cache, int assoc, int blksz, int cacheSize, int
     cache->misspen = misspen;
     cache->tagLength = tagLength;
     cache->offsetLength = offsetLength;
-    cache->tagMask = ((unsigned long 	)pow(2, tagLength) - 1) << offsetLength;
-    cache->blockMask = ((unsigned long 	)pow(2, blockLength) - 1) << (tagLength + offsetLength);
-    cache->offsetMask = ((unsigned long 	)pow(2, offsetLength));
+    cache->tagMask = ((unsigned long)pow(2, tagLength) - 1) << offsetLength;
+    cache->blockMask = ((unsigned long)pow(2, blockLength) - 1) << (tagLength + offsetLength);
+    cache->offsetMask = ((unsigned long)pow(2, offsetLength));
 
     cache->tags = malloc(numTags * sizeof(struct tag));
 
@@ -45,22 +44,24 @@ void init(struct cachestructure *cache, int assoc, int blksz, int cacheSize, int
 
 int updateLRU(struct tag *tag, int numassoc, int associndex)
 {
-    for (int index = numassoc - 1; index >= tag-> end; index--){
-        if (tag->LRU[index] == associndex) {
+    for (int index = numassoc - 1; index >= tag->end; index--)
+    {
+        if (tag->LRU[index] == associndex)
+        {
             for (int i = index - 1; i >= tag->end; i--)
             {
                 tag->LRU[i + 1] = tag->LRU[i];
             }
-             tag->LRU[tag->end] = associndex;
+            tag->LRU[tag->end] = associndex;
             return 0;
         }
     }
-    tag->end = tag -> end - 1;
+    tag->end = tag->end - 1;
     tag->LRU[tag->end] = associndex;
     return 0;
 }
 
-int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss, int *storeHit, long int* lruUses)
+int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss, int *storeHit, long int *lruUses)
 {
     int tag = (addr & cache->tagMask) >> (cache->offsetLength);
     int block = (addr & cache->blockMask) >> (cache->offsetLength + cache->tagLength);
@@ -73,8 +74,9 @@ int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss
             if (cache->tags[tag].associations[numassoc].dirty == 1)
             {
                 *dirtyEvic = *dirtyEvic + 1;
-                cache->tags[tag].associations[numassoc].dirty = 0;
-            } else{
+            }
+            else
+            {
                 cache->tags[tag].associations[numassoc].dirty = 1;
             }
 
@@ -97,7 +99,6 @@ int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss
     if (cache->tags[tag].associations[lruIndex].dirty == 1)
     {
         *dirtyEvic = *dirtyEvic + 1;
-        cache->tags[tag].associations[lruIndex].dirty = 0;
     }
     cache->tags[tag].associations[lruIndex].dirty = 1;
     *storeMiss = *storeMiss + 1;
@@ -106,7 +107,7 @@ int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss
     return 0;
 }
 
-int load(struct cachestructure *cache, int addr, int *loadMiss, int *loadHit, int *dirtyEvic, long int* lruUses)
+int load(struct cachestructure *cache, int addr, int *loadMiss, int *loadHit, int *dirtyEvic, long int *lruUses)
 {
     int tag = (addr & cache->tagMask) >> (cache->offsetLength);
     int block = (addr & cache->blockMask) >> (cache->offsetLength + cache->tagLength);

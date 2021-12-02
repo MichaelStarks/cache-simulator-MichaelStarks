@@ -13,7 +13,7 @@ int miss_penalty = 30;
 int extraPenalty = 0;
 float associativityPen = 0;
 float cachePen = 0;
-float cycleTime = .5; // Pico Seconds
+float cycleTime = 0; // Pico Seconds
 float executionTime = 0.0;
 
 long int executCycles = 0;
@@ -44,7 +44,7 @@ void print_usage()
   exit(0);
 }
 
-void getPenalty(int associativity, float *associativityPen, int cachesize_kb, float *cachePen, int blocksize_bytes, int *blockPen)
+void getPenalty(int associativity, float *associativityPen, int cachesize_kb, float *cachePen)
 {
   switch (associativity)
   {
@@ -77,24 +77,6 @@ void getPenalty(int associativity, float *associativityPen, int cachesize_kb, fl
     break;
   case 128:
     *cachePen = 0.15;
-    break;
-  default:
-    break;
-  }
-
-  switch (blocksize_bytes)
-  {
-  case 16:
-    *blockPen = 0;
-    break;
-  case 32:
-    *blockPen = 2;
-    break;
-  case 64:
-    *blockPen = 6;
-    break;
-  case 128:
-    *blockPen = 14;
     break;
   default:
     break;
@@ -151,7 +133,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  getPenalty(associativity, &associativityPen, cachesize_kb, &cachePen, blocksize_bytes, &extraPenalty);
+  getPenalty(associativity, &associativityPen, cachesize_kb, &cachePen);
 
   // print out cache configuration
   printf("Cache parameters:\n");
@@ -162,6 +144,7 @@ int main(int argc, char *argv[])
   printf("\n");
 
   init(&cache, associativity, blocksize_bytes, cachesize_kb, miss_penalty);
+  cycleTime = ((float)(miss_penalty)) / 2.0;
   while (scanf("%c %d %lx %d\n", &marker, &loadstore, &address, &icount) != EOF)
   {
     // Code to print out just the first 10 addresses.  You'll want to delete
@@ -193,11 +176,11 @@ int main(int argc, char *argv[])
 
   readMissRate = (float)(loadMiss) / (float)(loadMiss + loadHits);
   totalMissRate = ((float)loadMiss + (float)storeMiss) / (float)memAccess;
-  executCycles = instructions + (dirtyEvic * (miss_penalty + 0 + 2)) + ((loadMiss + storeMiss - dirtyEvic) * miss_penalty);
-  totalCPI = ((float)executCycles)/((float)instructions);
-  avgMemTime = (float)((miss_penalty+2)*dirtyEvic + (miss_penalty * (loadMiss + storeMiss - dirtyEvic)))/(float)memAccess; 
+  executCycles = instructions + (dirtyEvic * 2) + ((loadMiss + storeMiss) * miss_penalty);
+  totalCPI = ((float)executCycles) / ((float)instructions);
+  avgMemTime = (float)((miss_penalty + 2) * dirtyEvic + (miss_penalty * (loadMiss + storeMiss - dirtyEvic))) / (float)memAccess;
 
-  printf("\tExecution Time %.2f\n",(executCycles)*cycleTime);
+  printf("\tExecution Time (ps) %.2f\n", (executCycles) * (cycleTime * (1 + cachePen + associativityPen)));
   printf("\texecution cycles %ld\n", executCycles);
   printf("\tinstructions %ld\n", instructions);
   printf("\tmemory accesses %ld\n", memAccess);
