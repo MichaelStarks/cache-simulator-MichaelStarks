@@ -15,6 +15,7 @@ float associativityPen = 0;
 float cachePen = 0;
 float cycleTime = 0; // Pico Seconds
 float executionTime = 0.0;
+long int executCyclesNoCache = 0;
 
 long int executCycles = 0;
 long int instructions = 0;
@@ -144,7 +145,7 @@ int main(int argc, char *argv[])
   printf("\n");
 
   init(&cache, associativity, blocksize_bytes, cachesize_kb, miss_penalty);
-  cycleTime = ((float)(miss_penalty)) / 2.0;
+  cycleTime = ((float)(miss_penalty)) / 15.0;
   while (scanf("%c %d %lx %d\n", &marker, &loadstore, &address, &icount) != EOF)
   {
     // Code to print out just the first 10 addresses.  You'll want to delete
@@ -177,10 +178,12 @@ int main(int argc, char *argv[])
   readMissRate = (float)(loadMiss) / (float)(loadMiss + loadHits);
   totalMissRate = ((float)loadMiss + (float)storeMiss) / (float)memAccess;
   executCycles = instructions + (dirtyEvic * 2) + ((loadMiss + storeMiss) * miss_penalty);
+  executCyclesNoCache = instructions + (loadMiss+loadHits) * 30 + (storeMiss + storeHits) * 2;
   totalCPI = ((float)executCycles) / ((float)instructions);
   avgMemTime = (float)((miss_penalty + 2) * dirtyEvic + (miss_penalty * (loadMiss + storeMiss - dirtyEvic))) / (float)memAccess;
 
-  printf("\tExecution Time (ps) %.2f\n", (executCycles) * (cycleTime * (1 + cachePen + associativityPen)));
+  printf("\tExecution Time (ps) %.2f\n", (executCycles) * ((float)1/(cycleTime * (1 + cachePen + associativityPen))));
+  // printf("\tExecution Time (ps no cache) %.2f\n", executCyclesNoCache/((float)2));
   printf("\texecution cycles %ld\n", executCycles);
   printf("\tinstructions %ld\n", instructions);
   printf("\tmemory accesses %ld\n", memAccess);
