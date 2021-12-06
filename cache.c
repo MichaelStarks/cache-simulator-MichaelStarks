@@ -45,6 +45,7 @@ void print_usage()
   exit(0);
 }
 
+// gets penalty numbers based on passed parameters
 void getPenalty(int associativity, float *associativityPen, int cachesize_kb, float *cachePen)
 {
   switch (associativity)

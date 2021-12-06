@@ -74,14 +74,18 @@ int updateLRU(struct tag *tag, int numassoc, int associndex)
 
 int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss, int *storeHit, long int *lruUses)
 {
+    // Gets the row from the address
     int tag = (addr & cache->tagMask) >> (cache->offsetLength);
+    // Gets the tag from the address
     int block = (addr & cache->blockMask) >> (cache->offsetLength + cache->tagLength);
-
+    // Loops through the cache row to find the tag
     for (int numassoc = 0; numassoc < cache->assoc; numassoc++)
     {
+        // If the block is empty cache miss and set dirty
         if ((cache->tags[tag].associations[numassoc].block == -1))
         {
             cache->tags[tag].associations[numassoc].block = block;
+            // I already dirty, add 1 to dirty evictions
             if (cache->tags[tag].associations[numassoc].dirty == 1)
             {
                 *dirtyEvic = *dirtyEvic + 1;
@@ -92,10 +96,12 @@ int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss
             }
 
             *storeMiss = *(storeMiss) + 1;
+            // Update the LRU
             updateLRU(&cache->tags[tag], cache->assoc, numassoc);
 
             return 0;
         }
+        // If th tag is found, add one to store hit and update the lru
         else if (cache->tags[tag].associations[numassoc].block == block)
         {
             *storeHit = *(storeHit) + 1;
@@ -104,14 +110,16 @@ int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss
             return 0;
         }
     }
-
+    // If the tag cannot be found, look at the lru for an index
     int lruIndex = cache->tags[tag].LRU[cache->assoc - 1];
     cache->tags[tag].associations[lruIndex].block = block;
+    // if index is dirty add one to dirty evictions
     if (cache->tags[tag].associations[lruIndex].dirty == 1)
     {
         *dirtyEvic = *dirtyEvic + 1;
     }
     cache->tags[tag].associations[lruIndex].dirty = 1;
+    // Add one to store miss
     *storeMiss = *storeMiss + 1;
     updateLRU(&cache->tags[tag], cache->assoc, lruIndex);
 
@@ -120,18 +128,24 @@ int store(struct cachestructure *cache, int addr, int *dirtyEvic, int *storeMiss
 
 int load(struct cachestructure *cache, int addr, int *loadMiss, int *loadHit, int *dirtyEvic, long int *lruUses)
 {
+    // Find the row from the address
     int tag = (addr & cache->tagMask) >> (cache->offsetLength);
+    // Find the tag from the address
     int block = (addr & cache->blockMask) >> (cache->offsetLength + cache->tagLength);
     bool foundEmpty = 0;
     int emptyIndex = 0;
+    // Loops through the cache row
     for (int numassoc = 0; numassoc < cache->assoc; numassoc++)
     {
+        // if the tag is found add 1 to hit
         if ((cache->tags[tag].associations[numassoc].block == block))
         {
             *loadHit = *(loadHit) + 1;
+            // update lru
             updateLRU(&cache->tags[tag], cache->assoc, numassoc);
             return 0;
         }
+        // if not found find the first empty address to put it in
         else if ((cache->tags[tag].associations[numassoc].block == -1))
         {
             foundEmpty = 1;
@@ -139,29 +153,39 @@ int load(struct cachestructure *cache, int addr, int *loadMiss, int *loadHit, in
             break;
         }
     }
-
+    // if an empty location is found
     if (foundEmpty == 1)
     {
+        // if dirty add one to dirty evic
         if (cache->tags[tag].associations[emptyIndex].dirty == 1)
         {
             *dirtyEvic = *dirtyEvic + 1;
             cache->tags[tag].associations[emptyIndex].dirty = 0;
         }
+        // add one to load miss
         *loadMiss = *loadMiss + 1;
+        // set the tag
         cache->tags[tag].associations[emptyIndex].block = block;
+        // Update lru
         updateLRU(&cache->tags[tag], cache->assoc, emptyIndex);
         return 0;
     }
+    // if not found
     else if (foundEmpty == 0)
     {
+        //get index from lru
         int lruIndex = cache->tags[tag].LRU[cache->assoc - 1];
+        // if index is dirty add one to dirty evic
         if (cache->tags[tag].associations[lruIndex].dirty == 1)
         {
             *dirtyEvic = *dirtyEvic + 1;
             cache->tags[tag].associations[lruIndex].dirty = 0;
         }
+        // add one to load miss
         *loadMiss = *loadMiss + 1;
+        // set tag
         cache->tags[tag].associations[lruIndex].block = block;
+        // update lru
         updateLRU(&cache->tags[tag], cache->assoc, lruIndex);
         return 0;
     }
